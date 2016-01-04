@@ -1,0 +1,15 @@
+{
+  "name": "bitcore-blocksize",
+  "version": "1.0.0",
+  "description": "A Bitcore service for block size analysis",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bitcore-lib": "^0.13.7",
+    "ejs": "^2.3.4"
+  }
+}

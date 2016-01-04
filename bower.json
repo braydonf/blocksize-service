@@ -1,0 +1,6 @@
+{
+  "name": "blocksize",
+  "dependencies": {
+    "bitcore-lib": "^0.13.7"
+  }
+}
