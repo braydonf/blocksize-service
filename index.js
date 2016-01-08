@@ -1,12 +1,13 @@
 'use strict';
 
+var csv = require('csv');
 var bitcore = require('bitcore-lib');
 var path = require('path');
 var EventEmitter = require('events').EventEmitter;
 
 function Blocksize(options) {
   EventEmitter.call(this);
-
+  this.cache = {};
   this.node = options.node;
 }
 
@@ -15,6 +16,9 @@ Blocksize.dependencies = ['bitcoind', 'db', 'web'];
 Blocksize.PREFIXES = {
   BLOCKSIZE: new Buffer('10', 'hex')
 };
+
+Blocksize.MAX_HEIGHT_BUFFER = new Buffer('ffffffff', 'hex');
+Blocksize.MIN_HEIGHT_BUFFER = new Buffer('00000000', 'hex');
 
 Blocksize.prototype.getServiceURL = function() {
   var url = this.node.https ? 'https://' : 'http://';
@@ -64,11 +68,82 @@ Blocksize.prototype.blockHandler = function(block, add, callback) {
 
 };
 
+Blocksize.prototype.getAPIMethods = function() {
+  return [
+    ['exportBlocksizesCSV', this, this.exportBlocksizesCSV, 0]
+  ];
+};
+
+Blocksize.prototype.exportBlocksizesCSV = function(callback) {
+  var self = this;
+  var tipHeight = self.node.services.db.tip.__height;
+  if (self.cache.height === tipHeight) {
+    setImmediate(function() {
+      callback(null, self.cache.blocksizes);
+    });
+  } else {
+    self.getBlockSizes(function(err, blocksizes) {
+      if (err) {
+        return callback(err);
+      }
+      csv.stringify(blocksizes, function(err, data) {
+        if (err) {
+          return callback(err);
+        }
+        self.cache = {
+          height: tipHeight,
+          blocksizes: data
+        };
+        callback(null, data);
+      });
+    });
+  }
+};
+
+Blocksize.prototype.getBlockSizes = function(callback) {
+  var stream = this.node.services.db.store.createReadStream({
+    gte: Buffer.concat([Blocksize.PREFIXES.BLOCKSIZE, Blocksize.MIN_HEIGHT_BUFFER]),
+    lte: Buffer.concat([Blocksize.PREFIXES.BLOCKSIZE, Blocksize.MAX_HEIGHT_BUFFER]),
+    keyEncoding: 'binary',
+    valueEncoding: 'binary'
+  });
+
+  var blocksizes = [];
+
+  stream.on('data', function(data) {
+    var height = data.key.readUInt32BE(1);
+    var blocksize = data.value.readDoubleBE(32);
+    blocksizes.push([height, blocksize]);
+  });
+
+  var error = null;
+
+  stream.on('error', function(err) {
+    error = err;
+  });
+
+  stream.on('end', function() {
+    if (error) {
+      return callback(error);
+    }
+    callback(null, blocksizes);
+  });
+
+};
+
 Blocksize.prototype.setupRoutes = function(app, express) {
   var self = this;
   app.set('views', path.resolve(__dirname, './views'));
   app.engine('ejs', require('ejs').__express);
   app.use('/static', express.static(path.resolve(__dirname, './static')));
+  app.get('/csv', function(req, res) {
+    self.exportBlocksizesCSV(function(err, csv) {
+      if (err) {
+        return res.status(500).send(err.message);
+      }
+      res.send(csv);
+    });
+  });
   app.get('/', function(req, res) {
     res.render('index.ejs', {
       baseUrl: self.getServiceURL()
@@ -78,10 +153,6 @@ Blocksize.prototype.setupRoutes = function(app, express) {
 
 Blocksize.prototype.getRoutePrefix = function() {
   return 'blocksizes';
-};
-
-Blocksize.prototype.getAPIMethods = function() {
-  return [];
 };
 
 Blocksize.prototype.getPublishEvents = function() {
