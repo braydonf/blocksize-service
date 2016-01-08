@@ -5,38 +5,36 @@
 <title>Bitcoin Blocksizes</title>
 <base href="<%- baseUrl %>">
 <script src="static/js/bitcore-lib/bitcore-lib.js"></script>
+<script src="static/js/jquery/dist/jquery.js"></script>
+<script src="static/js/d3/d3.js"></script>
+<script src="static/chart.js"></script>
 <style>
 body {
-  font-family: Ubuntu;
-  text-align: center;
-  transition: background-color 1s;
+  font: 10px sans-serif;
 }
-h1 {
-  font-weight:200;
-  font-size:48px;
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
 }
-h2 {
-  font-weight:200;
-  font-size:32px;
+.x.axis path {
+  display: none;
 }
-#balance {
-  margin-top:40px;
-  font-size:48px;
+.line {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 1px;
 }
-#recent {
+.maxLine {
+  fill: none;
+  stroke: #E77E07;
+  stroke-width: 1.5px;
 }
-#recent > li {
-  margin-bottom:20px;
+.dot {
 }
 </style>
-<script language="javascript">
-  $(document).ready(function() {
-    var bitcore = require('bitcore-lib');
-  });
-</script>
 </head>
-
 <body>
-  <h1>Bitcoin Blocksizes</h1>
 </body>
 </html>

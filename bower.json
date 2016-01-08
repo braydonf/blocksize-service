@@ -1,6 +1,8 @@
 {
   "name": "blocksize",
   "dependencies": {
-    "bitcore-lib": "^0.13.7"
+    "bitcore-lib": "^0.13.7",
+    "jquery": "~2.1.4",
+    "d3": "~3.5.12"
   }
 }

@@ -86,7 +86,7 @@ Blocksize.prototype.exportBlocksizesCSV = function(callback) {
       if (err) {
         return callback(err);
       }
-      csv.stringify(blocksizes, function(err, data) {
+      csv.stringify(blocksizes, {columns: ['height', 'bytes'], header: true}, function(err, data) {
         if (err) {
           return callback(err);
         }
@@ -146,6 +146,7 @@ Blocksize.prototype.setupRoutes = function(app, express) {
   });
   app.get('/', function(req, res) {
     res.render('index.ejs', {
+      blockheight: self.node.services.db.tip.__height,
       baseUrl: self.getServiceURL()
     });
   });

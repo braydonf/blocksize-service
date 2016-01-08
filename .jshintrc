@@ -29,14 +29,16 @@
   "maxlen": 120,
   "multistr": true,
   "predef": [
-  "after",
-  "afterEach",
-  "before",
-  "beforeEach",
-  "describe",
-  "exports",
-  "it",
-  "module",
-  "require"
+    "after",
+    "afterEach",
+    "before",
+    "beforeEach",
+    "describe",
+    "exports",
+    "it",
+    "module",
+    "require",
+    "d3",
+    "$"
   ]
 }
