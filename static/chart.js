@@ -13,8 +13,8 @@ $(document).ready(function() {
 
   var x = d3.scale.linear().range([0, width]);
   var y = d3.scale.linear().range([height, 0]);
-  var xAxis = d3.svg.axis().scale(x).orient('bottom');
-  var yAxis = d3.svg.axis().scale(y).orient('left');
+  var xAxis = d3.svg.axis().scale(x).orient('bottom').ticks(10).tickSize(-height, 0, 0);
+  var yAxis = d3.svg.axis().scale(y).orient('left').ticks(10).tickSize(-width, 0, 0);
 
   var maxLine = d3.svg.line()
     .x(function(d) { return x(d.height); })
@@ -61,26 +61,32 @@ $(document).ready(function() {
     // csvData = csvData.slice(300000, 390000);
 
     // The number of previous blocks to sample
-    var lookback = 12096;
+    var lookback = 144 * 30 * 3;
 
     // The factor that the median is multiplied
     var factor = 2;
 
+    // The fixed minimum size
+    var floor = 100000;
+
     var maxBlockSizes = [];
     for (var i = 0; i < csvData.length; i++) {
-      var range = [];
-      for (var j = 0; j < lookback; j++) {
-        var prev = i - j;
-        if (prev > 0) {
-          range.push(csvData[prev].bytes);
-        } else {
-          range.push(0);
+      if (i % 2016 === 0) {
+        var range = [];
+        for (var j = 0; j < lookback; j++) {
+          var prev = i - j;
+          if (prev > 0) {
+            range.push(csvData[prev].bytes);
+          } else {
+            range.push(0);
+          }
         }
+        var newMax = Math.round((median(range) * factor ) + floor);
+        maxBlockSizes.push({
+          height: csvData[i].height,
+          bytes: newMax
+        });
       }
-      maxBlockSizes.push({
-        height: csvData[i].height,
-        bytes: Math.round(median(range) * factor)
-      });
     }
 
     var data = [];
@@ -92,18 +98,9 @@ $(document).ready(function() {
       }
     }
 
-    var maxData = [];
-    for (var h = 0; h < maxBlockSizes.length; h++) {
-      if (h % 1000) {
-        maxData[maxData.length - 1].bytes = (maxData[maxData.length - 1].bytes + maxBlockSizes[h].bytes) / 2;
-      } else {
-        maxData.push(maxBlockSizes[h]);
-      }
-    }
-
     // Sets the max bounds of the chart
-    x.domain(d3.extent(maxData, function(d) { return d.height; }));
-    y.domain(d3.extent(maxData, function(d) { return d.bytes; }));
+    x.domain(d3.extent(maxBlockSizes, function(d) { return d.height; }));
+    y.domain(d3.extent(maxBlockSizes, function(d) { return d.bytes - floor; })).nice();
 
     svg.append('g')
       .attr('class', 'x axis')
@@ -130,7 +127,7 @@ $(document).ready(function() {
       .style('fill', function(d) { return color(d.bytes); });
 
     svg.append('path')
-      .datum(maxData)
+      .datum(maxBlockSizes)
       .attr('class', 'maxLine')
       .attr('d', maxLine);
   });
